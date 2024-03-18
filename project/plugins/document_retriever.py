@@ -25,11 +25,11 @@ class DocumentRetriever(Plugin):
         with open(
             os.path.join(
                 self.config.get("index_folder"),
-                "chunk_id_to_index.pkl",
+                "chunk_id_to_index.json",
             ),
-            "rb",
+            "r",
         ) as f:
-            self.chunk_id_to_index = pickle.load(f)
+            self.chunk_id_to_index = json.load(f)
 
         self.enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
