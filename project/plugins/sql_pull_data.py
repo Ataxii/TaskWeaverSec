@@ -15,6 +15,9 @@ class SqlPullData(Plugin):
     db = None
 
     def __call__(self, query: str):
+        if not re.match(r'^[a-zA-Z0-9\s\,\.\'\(\)\-\*]*$', query):
+            raise ValueError("Invalid query input. Please provide a valid SQL query.")
+            
         api_type = self.config.get("api_type", "azure")
         if api_type == "azure":
             model = AzureChatOpenAI(
@@ -53,13 +56,19 @@ class SqlPullData(Plugin):
 
         inputs = {
             "schema": RunnableLambda(get_schema),
-            "question": itemgetter("question"),
+            "question": query,
         }
+
         sql_response = RunnableMap(inputs) | prompt | model.bind(stop=["\nSQLResult:"]) | StrOutputParser()
 
         sql = sql_response.invoke({"question": query})
 
-        result = self.db._execute(sql, fetch="all")
+        conn = sqlite3.connect(self.config.get("sqlite_db_path"))
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        conn.close()
+
 
         df = pd.DataFrame(result)
 
