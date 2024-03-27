@@ -104,6 +104,8 @@ Human: ___
 
 ####  or 💻 Web UI 
 TaskWeaver also supports WebUI for demo purpose, please refer to [web UI docs](https://microsoft.github.io/TaskWeaver/docs/usage/webui) for more details.
+For security purposes, after the installation of Chainlit, run the following command
+sed -i 's/DEFAULT_HOST = "0.0.0.0"/DEFAULT_HOST = "127.0.0.1"/' ~/.local/lib/python3.11/site-packages/Chainlit/config.py
 
 #### or 📋 Import as a Library
 TaskWeaver can be imported as a library to integrate with your existing project, more information can be found in [docs](https://microsoft.github.io/TaskWeaver/docs/usage/library)
