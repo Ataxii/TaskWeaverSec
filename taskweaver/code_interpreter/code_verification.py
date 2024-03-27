@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 
 from injector import inject
 
+
 class FunctionCallValidator(ast.NodeVisitor):
     @inject
     def __init__(
@@ -16,40 +17,29 @@ class FunctionCallValidator(ast.NodeVisitor):
         self.errors = []
         self.allowed_modules = allowed_modules
         self.blocked_functions = blocked_functions
-        self.alias_map = {}  # Ajout pour suivre les alias
-
-    def visit_Assign(self, node):
-        for target in node.targets:
-            if isinstance(target, ast.Name):
-                if isinstance(node.value, ast.Name):
-                    # Capture des alias si la valeur assignée est une fonction bloquée
-                    if node.value.id in self.blocked_functions:
-                        self.alias_map[target.id] = node.value.id
 
     def visit_Call(self, node):
         if len(self.blocked_functions) > 0:
             if isinstance(node.func, ast.Name):
                 function_name = node.func.id
-               # Vérification de la fonction elle-même ou de son alias
-                if function_name in self.blocked_functions or function_name in self.alias_map:
+                if function_name in self.blocked_functions:
                     self.errors.append(
                         f"Error on line {node.lineno}: {self.lines[node.lineno - 1]} "
-                        "=> Function '{function_name}' or its alias is not allowed.",
+                        f"=> Function '{node.func.id}' is not allowed.",
                     )
-                    return False  # Arrêt de l'exécution si une fonction bloquée ou son alias est utilisé 
+                    return False
                 return True
             elif isinstance(node.func, ast.Attribute):
                 function_name = node.func.attr
-                if function_name in self.blocked_functions or function_name in self.alias_map:
+                if function_name in self.blocked_functions:
                     self.errors.append(
                         f"Error on line {node.lineno}: {self.lines[node.lineno - 1]} "
-                        f"=> Function '{function_name}' or its alias is not allowed.",
+                        f"=> Function '{function_name}' is not allowed.",
                     )
                     return False
                 return True
             else:
                 return True
-
     def visit_Import(self, node):
         for alias in node.names:
             if "." in alias.name:
@@ -66,7 +56,6 @@ class FunctionCallValidator(ast.NodeVisitor):
                     f"Error on line {node.lineno}: {self.lines[node.lineno - 1]} "
                     f"=> Importing module '{module_name}' is not allowed. ",
                 )
-
     def visit_ImportFrom(self, node):
         if "." in node.module:
             module_name = node.module.split(".")[0]
@@ -82,11 +71,8 @@ class FunctionCallValidator(ast.NodeVisitor):
                 f"Error on line {node.lineno}: {self.lines[node.lineno - 1]} "
                 f"=>  Importing from module '{node.module}' is not allowed.",
             )
-
     def generic_visit(self, node):
         super().generic_visit(node)
-
-
 def format_code_correction_message() -> str:
     return (
         "The generated code has been verified and some errors are found. "
@@ -94,24 +80,18 @@ def format_code_correction_message() -> str:
         "please do it and try again.\n"
         "Otherwise, please explain the problem to me."
     )
-
-
 def separate_magics_and_code(input_code: str) -> Tuple[List[str], str, List[str]]:
     line_magic_pattern = re.compile(r"^\s*%\s*[a-zA-Z_]\w*")
     cell_magic_pattern = re.compile(r"^\s*%%\s*[a-zA-Z_]\w*")
     shell_command_pattern = re.compile(r"^\s*!")
-
     magics = []
     python_code = []
     package_install_commands = []
-
     lines = input_code.splitlines()
     inside_cell_magic = False
-
     for line in lines:
         if not line.strip() or line.strip().startswith("#"):
             continue
-
         if inside_cell_magic:
             magics.append(line)
             if not line.strip():
@@ -130,8 +110,6 @@ def separate_magics_and_code(input_code: str) -> Tuple[List[str], str, List[str]
             python_code.append(line)
     python_code_str = "\n".join(python_code)
     return magics, python_code_str, package_install_commands
-
-
 def code_snippet_verification(
     code_snippet: str,
     code_verification_on: bool = False,
@@ -146,7 +124,6 @@ def code_snippet_verification(
         if len(magics) > 0:
             errors.append(f"Magic commands except package install are not allowed. Details: {magics}")
         tree = ast.parse(python_code)
-
         processed_lines = []
         for line in python_code.splitlines():
             if not line.strip() or line.strip().startswith("#"):
@@ -159,4 +136,3 @@ def code_snippet_verification(
     except SyntaxError as e:
         # print(f"Syntax error: {e}")
         return [f"Syntax error: {e}"]
-
