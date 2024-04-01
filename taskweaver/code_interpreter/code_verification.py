@@ -25,6 +25,7 @@ class FunctionCallValidator(ast.NodeVisitor):
                     # Capture des alias si la valeur assignée est une fonction bloquée
                     if node.value.id in self.blocked_functions:
                         self.alias_map[target.id] = node.value.id
+                        self.blocked_functions.append(target.id)
 
     def visit_Call(self, node):
         if len(self.blocked_functions) > 0:
