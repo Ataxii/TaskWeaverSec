@@ -4,7 +4,6 @@ from typing import List, Optional, Tuple
 
 from injector import inject
 
-
 class FunctionCallValidator(ast.NodeVisitor):
     @inject
     def __init__(
@@ -17,24 +16,35 @@ class FunctionCallValidator(ast.NodeVisitor):
         self.errors = []
         self.allowed_modules = allowed_modules
         self.blocked_functions = blocked_functions
+        self.alias_map = {}  # Ajout pour suivre les alias
+
+    def visit_Assign(self, node):
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                if isinstance(node.value, ast.Name):
+                    # Capture des alias si la valeur assignée est une fonction bloquée
+                    if node.value.id in self.blocked_functions:
+                        self.alias_map[target.id] = node.value.id
+                        self.blocked_functions.append(target.id)
 
     def visit_Call(self, node):
         if len(self.blocked_functions) > 0:
             if isinstance(node.func, ast.Name):
                 function_name = node.func.id
-                if function_name in self.blocked_functions:
+               # Vérification de la fonction elle-même ou de son alias
+                if function_name in self.blocked_functions or function_name in self.alias_map:
                     self.errors.append(
                         f"Error on line {node.lineno}: {self.lines[node.lineno - 1]} "
-                        f"=> Function '{node.func.id}' is not allowed.",
+                        "=> Function '{function_name}' or its alias is not allowed.",
                     )
-                    return False
+                    return False  # Arrêt de l'exécution si une fonction bloquée ou son alias est utilisé 
                 return True
             elif isinstance(node.func, ast.Attribute):
                 function_name = node.func.attr
-                if function_name in self.blocked_functions:
+                if function_name in self.blocked_functions or function_name in self.alias_map:
                     self.errors.append(
                         f"Error on line {node.lineno}: {self.lines[node.lineno - 1]} "
-                        f"=> Function '{function_name}' is not allowed.",
+                        f"=> Function '{function_name}' or its alias is not allowed.",
                     )
                     return False
                 return True
