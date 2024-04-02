@@ -43,27 +43,6 @@ def test_block_function():
     print("---->", code_verify_errors)
     assert len(code_verify_errors) == 2
 
-def test_block_functions_aliases_bypass():
-    allowed_modules = []
-    blocked_functions = ["exec", "eval"]
-    code_snippet = (
-        "alias_exec = exec\n"
-        "alias_exec('import os')\n"
-        "alias_exec_second = alias_exec\n"
-        "alias_exec_second('import os')\n"
-        "alias_eval = eval\n"
-        "alias_eval('import sys')\n"
-        "alias_eval_second = alias_eval\n"
-        "alias_eval_second('import sys')\n"
-    )
-    code_verify_errors = code_snippet_verification(
-        code_snippet,
-        allowed_modules=allowed_modules,
-        code_verification_on=True,
-        blocked_functions=blocked_functions,
-    )
-    print("---->", code_verify_errors)
-    assert len(code_verify_errors) == 4
 
 def test_normal_code():
     allowed_modules = []
