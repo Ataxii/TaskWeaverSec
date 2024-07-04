@@ -14,6 +14,9 @@ cache = false
 # Follow symlink for asset mount (see https://github.com/Chainlit/chainlit/issues/317)
 # follow_symlink = true
 
+# Set the default host to listen on
+DEFAULT_HOST = "127.0.0.1"
+
 [features]
 # Show the prompt playground
 prompt_playground = true
